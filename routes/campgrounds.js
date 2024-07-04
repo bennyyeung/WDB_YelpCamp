@@ -10,15 +10,7 @@ const Campground = require('../models/campground');
 
 router.route('/')
     .get(catchAsync(campgrounds.index))
-    // .post(isLoggedIn, validateCampground, catchAsync(campgrounds.createCampground));
-    // .post(upload.single('image'), (req, res) => {
-    //     console.log(req.body);
-    //     console.log(req.file);
-    // })
-    .post(upload.array('image'), (req, res) => {
-        console.log(req.body, req.files);
-        res.send("IT WORKED!")
-    })
+    .post(isLoggedIn, upload.array('image'), validateCampground, catchAsync(campgrounds.createCampground));
 
 router.get('/new', isLoggedIn, campgrounds.renderNewForm);
 
