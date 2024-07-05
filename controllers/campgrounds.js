@@ -1,4 +1,5 @@
 const Campground = require('../models/campground');
+const { cloudinary } = require("../cloudinary");
 
 module.exports.index = async (req, res) => {
     const campgrounds = await Campground.find({});
@@ -44,25 +45,63 @@ module.exports.renderEditForm = async (req, res) => {
     res.render('campgrounds/edit', { campground })
 }
 
+//From Colt
+// module.exports.updateCampground = async (req, res) => {
+//     const { id } = req.params;    
+//     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
+//     const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }));
+//     campground.images.push(...imgs);
+//     await campground.save();
+//     if(req.body.deleteImages) {
+//         for (let filename of req.body.deleteImages) {
+//             await cloudinary.uploader.destory(filename);
+//         }
+//         await campground.updateOne({ $pull: { images: { filename: { $in: req.body.deleteImages } } } })
+//         console.log(campground)
+//     };
+//     req.flash('success', 'Successfully updated campground!');
+//     res.redirect(`/campgrounds/${campground._id}`)
+// }
+
+//From Q&A Section 558
 module.exports.updateCampground = async (req, res) => {
-    const { id } = req.params;
-    console.log(req.body);
+    const id = req.params.id
     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
-    const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }));
-    campground.images.push(...imgs);
+    if (req.files.length > 0) {
+        const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }))
+        campground.images.push(...imgs);
+    }
     await campground.save();
-    req.flash('success', 'Successfully updated campground!');
+    if (req.body.deleteImages) {
+        for (let filename of req.body.deleteImages) {
+            await cloudinary.uploader.destroy(filename);
+        }
+        await campground.updateOne({ $pull: { images: { filename: { $in: req.body.deleteImages } } } })
+    }
+    req.flash('success', 'Successfully updated campground!')
     res.redirect(`/campgrounds/${campground._id}`)
 }
 
+//From Colt
+// module.exports.deleteCampground = async (req, res) => {
+//     const { id } = req.params;
+//     const campground = await Campground.findById(id);
+//     if (!campground.author.equals(req.user._id)) {
+//         req.flash('error', 'You do not have permission to do that!');
+//         return res.redirect(`/campgrounds/${id}`);
+//     }
+//     await Campground.findByIdAndDelete(id);
+//     req.flash('success', 'Successfully deleted campground!');
+//     res.redirect('/campgrounds');
+// }
+
+//From Q&A Section 558
 module.exports.deleteCampground = async (req, res) => {
-    const { id } = req.params;
-    const campground = await Campground.findById(id);
-    if (!campground.author.equals(req.user._id)) {
-        req.flash('error', 'You do not have permission to do that!');
-        return res.redirect(`/campgrounds/${id}`);
+    const { id } = req.params
+    const campground = await Campground.findByIdAndDelete(id);
+    for (let image of campground.images) {
+        await cloudinary.uploader.destroy(image.filename);
     }
-    await Campground.findByIdAndDelete(id);
-    req.flash('success', 'Successfully deleted campground!');
+    req.flash('success', 'Successfully deleted campground!')
     res.redirect('/campgrounds');
 }
