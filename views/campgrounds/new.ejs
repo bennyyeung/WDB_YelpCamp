@@ -13,7 +13,6 @@
         <input class="form-control" type="text" id="location" name="campground[location]" required />
         <div class="valid-feedback">Looks Good!</div>
       </div>
-      <input type="file" name="image" id="" multiple />
       <!-- <div class="mb-3">
         <label class="form-label" for="image">Image Url</label>
         <input
@@ -49,6 +48,11 @@
         <div class="valid-feedback">Looks Good!</div>
       </div>
       <div class="mb-3">
+        <label for="image" class="form-label">Image(s)</label>
+        <input class="form-control" type="file" id="image" name="image" multiple />
+        <div id="image-list" class="mt-2"></div>
+      </div>
+      <div class="mb-3">
         <button class="btn btn-success">Add Campground</button>
       </div>
     </form>
@@ -80,4 +84,19 @@
       );
     });
   })();
+
+  // Display selected image filenames
+  document.getElementById("image").addEventListener("change", function () {
+    const imageList = document.getElementById("image-list");
+    imageList.innerHTML = "";
+
+    if (this.files.length > 1) {
+      for (let i = 0; i < this.files.length; i++) {
+        const file = this.files[i];
+        const listItem = document.createElement("div");
+        listItem.textContent = file.name;
+        imageList.appendChild(listItem);
+      }
+    }
+  });
 </script>

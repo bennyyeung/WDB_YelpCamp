@@ -34,10 +34,6 @@
         <div class="valid-feedback">Looks Good!</div>
       </div>
       <div class="mb-3">
-        <label class="form-label" for="image">Add Images</label>
-        <input type="file" name="image" id="image" multiple />
-      </div>
-      <div class="mb-3">
         <label class="form-label" for="price">Campground Price</label>
         <div class="input-group">
           <span class="input-group-text" id="price-label">$</span>
@@ -65,9 +61,31 @@
         <div class="valid-feedback">Looks Good!</div>
       </div>
       <div class="mb-3">
+        <label for="image" class="form-label">Add More Image(s)</label>
+        <input class="form-control" type="file" id="image" name="image" multiple />
+        <div id="image-list" class="mt-2"></div>
+      </div>
+      <div class="mb-3">
         <button class="btn btn-info">Update Campground</button>
       </div>
     </form>
     <a href="/campgrounds/<%= campground._id %>">Back to Campgrounds</a>
   </div>
 </div>
+
+<script>
+  // Display selected image filenames
+  document.getElementById("image").addEventListener("change", function () {
+    const imageList = document.getElementById("image-list");
+    imageList.innerHTML = "";
+
+    if (this.files.length > 1) {
+      for (let i = 0; i < this.files.length; i++) {
+        const file = this.files[i];
+        const listItem = document.createElement("div");
+        listItem.textContent = file.name;
+        imageList.appendChild(listItem);
+      }
+    }
+  });
+</script>
