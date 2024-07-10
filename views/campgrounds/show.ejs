@@ -1,5 +1,6 @@
 <% layout('layouts/boilerplate') %>
 <link rel="stylesheet" href="/stylesheets/stars.css" />
+<link rel="stylesheet" href="/stylesheets/main.css" />
 <div class="row">
   <div class="col-6">
     <div id="campgroundCarousel" class="carousel slide">
@@ -43,6 +44,7 @@
     </div>
   </div>
   <div class="col-6">
+    <div id="map"></div>
     <% if(currentUser) { %>
     <h2>Leave a Review</h2>
     <form action="/campgrounds/<%= campground._id %>/reviews" method="POST" class="mb-3 validated-form" novalidate>
@@ -97,3 +99,37 @@
     <% } %>
   </div>
 </div>
+
+<script>
+  function initMap() {
+    const lat = <%= lat %>;
+    const lng = <%= lng %>;
+    const center = {lat: lat, lng: lng };
+    const map = new google.maps.Map(document.getElementById('map'), {
+        zoom: 8,
+        center: center,
+        scrollwheel: true,
+        streetViewControl: false
+    });
+    const contentString = `
+      <strong><%= campground.name %><br />
+      <%= campground.location %></strong>
+      <p><%= campground.description %></p>
+    `
+    const infowindow = new google.maps.InfoWindow({
+      content: contentString
+    });
+    const marker = new google.maps.Marker({
+        position: center,
+        map: map
+    });
+    marker.addListener('click', function() {
+      infowindow.open(map, marker);
+    });
+  }
+</script>
+<script
+  async
+  defer
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGmOatZNwpLNCl0EBb0UFOdifJSCXnHtY&callback=initMap"
+></script>

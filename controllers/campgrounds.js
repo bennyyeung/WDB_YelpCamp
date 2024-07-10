@@ -1,5 +1,15 @@
 const Campground = require('../models/campground');
 const { cloudinary } = require("../cloudinary");
+const NodeGeocoder = require('node-geocoder');
+
+const options = {
+    provider: 'google',
+    httpAdapter: 'https',
+    apiKey: process.env.GEOCODER_API_KEY,
+    formatter: null
+};
+
+const geocoder = NodeGeocoder(options);
 
 module.exports.index = async (req, res) => {
     const campgrounds = await Campground.find({});
@@ -20,6 +30,7 @@ module.exports.createCampground = (async (req, res, next) => {
     res.redirect(`/campgrounds/${campground._id}`)
 })
 
+
 module.exports.showCampground = async (req, res) => {
     const campground = await Campground.findById(req.params.id)
         .populate({
@@ -32,7 +43,14 @@ module.exports.showCampground = async (req, res) => {
         req.flash('error', 'Cannot find that campground');
         return res.redirect('/campgrounds');
     }
-    res.render('campgrounds/show', { campground })
+    // Get geocode for the campground's location
+    const geocodeRes = await geocoder.geocode(campground.location);
+    let lat, lng;
+    if (geocodeRes.length > 0) {
+        lat = geocodeRes[0].latitude;
+        lng = geocodeRes[0].longitude;
+    }
+    res.render('campgrounds/show', { campground, lat, lng });   
 }
 
 module.exports.renderEditForm = async (req, res) => {
