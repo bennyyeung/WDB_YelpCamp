@@ -21,13 +21,19 @@ module.exports.renderNewForm = (req, res) => {
 }
 
 module.exports.createCampground = (async (req, res, next) => {
-    // if(!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);    
+    // if(!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
     const campground = new Campground(req.body.campground);
-    campground.images = req.files.map(f => ({ url: f.path, filename: f.filename }))
+    campground.images = req.files.map(f => ({ url: f.path, filename: f.filename }));
     campground.author = req.user._id;
+    // Geocode location and cache lat/lng
+    const geocodeRes = await geocoder.geocode(campground.location);
+    if (geocodeRes.length > 0) {
+        campground.lat = geocodeRes[0].latitude;
+        campground.lng = geocodeRes[0].longitude;
+    }
     await campground.save();
     req.flash('success', 'Successfully made a new campground!');
-    res.redirect(`/campgrounds/${campground._id}`)
+    res.redirect(`/campgrounds/${campground._id}`);
 })
 
 
@@ -66,6 +72,14 @@ module.exports.renderEditForm = async (req, res) => {
 module.exports.updateCampground = async (req, res) => {
     const id = req.params.id
     const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
+    // If location is updated, re-geocode and update lat/lng
+    if (req.body.campground.location !== campground.location) {
+        const geocodeRes = await geocoder.geocode(req.body.campground.location);
+        if (geocodeRes.length > 0) {
+            campground.lat = geocodeRes[0].latitude;
+            campground.lng = geocodeRes[0].longitude;
+        }
+    }
     if (req.files.length > 0) {
         const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }))
         campground.images.push(...imgs);
