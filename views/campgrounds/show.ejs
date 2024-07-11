@@ -104,32 +104,32 @@
   function initMap() {
     const lat = <%= lat %>;
     const lng = <%= lng %>;
-    const center = {lat: lat, lng: lng };
+    const position = {lat: lat, lng: lng };
     const map = new google.maps.Map(document.getElementById('map'), {
         zoom: 10,
-        center: center,
+        center: position,
         scrollwheel: true,
-        streetViewControl: false
+        streetViewControl: false,
+        mapId: "DEMO_MAP_ID"
     });
-    const contentString = `
-      <strong><%= campground.name %><br />
-      <%= campground.location %></strong>
-      <p><%= campground.description %></p>
-    `
+    const contentString = `<strong><%= campground.name %><br /><%= campground.location %></strong><p><%= campground.description %></p>`
     const infowindow = new google.maps.InfoWindow({
-      content: contentString
+      content: contentString,
+      ariaLabel: "Campground",
     });
-    const marker = new google.maps.Marker({
-        position: center,
-        map: map
+    const marker = new google.maps.marker.AdvancedMarkerElement({
+        map,
+        position: position
     });
-    marker.addListener('click', function() {
-      infowindow.open(map, marker);
+    marker.addListener('click', () => {
+      infowindow.open({
+        anchor: marker,
+        map,
+      });
     });
   }
 </script>
 <script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGmOatZNwpLNCl0EBb0UFOdifJSCXnHtY&callback=initMap&loading=async&libraries=marker"
   async
-  defer
-  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDGmOatZNwpLNCl0EBb0UFOdifJSCXnHtY&callback=initMap"
 ></script>
