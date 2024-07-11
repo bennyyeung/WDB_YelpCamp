@@ -20,21 +20,43 @@ module.exports.renderNewForm = (req, res) => {
     res.render('campgrounds/new');
 }
 
-module.exports.createCampground = (async (req, res, next) => {
-    // if(!req.body.campground) throw new ExpressError('Invalid Campground Data', 400);
-    const campground = new Campground(req.body.campground);
-    campground.images = req.files.map(f => ({ url: f.path, filename: f.filename }));
-    campground.author = req.user._id;
-    // Geocode location and cache lat/lng
-    const geocodeRes = await geocoder.geocode(campground.location);
-    if (geocodeRes.length > 0) {
-        campground.lat = geocodeRes[0].latitude;
-        campground.lng = geocodeRes[0].longitude;
+module.exports.createCampground = async (req, res, next) => {
+    const { title, location, description, price } = req.body.campground;
+    try {
+        // Perform geocoding to get the latitude and longitude
+        const geocodeRes = await geocoder.geocode(location);
+        if (geocodeRes.length === 0) {
+            // Delete uploaded files if geocoding fails
+            if (req.files.length > 0) {
+                for (let file of req.files) {
+                    await cloudinary.uploader.destroy(file.filename);
+                }
+            }
+            req.flash('error', `${req.body.campground.location} is an invalid location! Please enter a valid location`);
+            return res.redirect('/campgrounds/new');
+        }
+        // If geocoding is successful, create the campground object with lat and lng
+        const newCampground = {
+            title,
+            location,
+            description,
+            price,
+            latitude: geocodeRes[0].latitude,
+            longitude: geocodeRes[0].longitude,
+            images: req.files.map(f => ({ url: f.path, filename: f.filename })),
+            author: req.user._id
+        };
+        // Create the campground
+        const campground = await Campground.create(newCampground);
+        console.log("Using Google API for new campground!");
+        req.flash('success', 'Successfully made a new campground!');
+        res.redirect(`/campgrounds/${campground._id}`);
+    } catch (err) {
+        console.error('Error creating campground:', err);
+        req.flash('error', 'Failed to create campground');
+        res.redirect('/campgrounds/new');
     }
-    await campground.save();
-    req.flash('success', 'Successfully made a new campground!');
-    res.redirect(`/campgrounds/${campground._id}`);
-})
+};
 
 
 module.exports.showCampground = async (req, res) => {
@@ -77,14 +99,30 @@ module.exports.renderEditForm = async (req, res) => {
 }
 
 module.exports.updateCampground = async (req, res) => {
-    const id = req.params.id
-    const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground });
-    // If location is updated, re-geocode and update lat/lng
+    const { id } = req.params    
+    const campground = await Campground.findById(id);
+    if (!campground) {
+        req.flash('error', 'Campground not found');
+        return res.redirect('/campgrounds');
+    }
+    // If location is updated, re-geocode, update lat/lng and update database
     if (req.body.campground.location !== campground.location) {
         const geocodeRes = await geocoder.geocode(req.body.campground.location);
-        if (geocodeRes.length > 0) {
-            campground.lat = geocodeRes[0].latitude;
-            campground.lng = geocodeRes[0].longitude;
+        if (geocodeRes.length === 0) {
+            req.flash('error', `${req.body.campground.location} is an invalid location! Please enter a valid location`);
+            return res.redirect(`/campgrounds/${id}/edit`);
+        }
+        newLatitude = geocodeRes[0].latitude;
+        newLongitude = geocodeRes[0].longitude;
+        console.log("Using Google API to update campground map!");
+
+        campground.title = req.body.campground.title;
+        campground.price = req.body.campground.price;
+        campground.description = req.body.campground.description;
+        if (newLatitude && newLongitude) {
+            campground.latitude = newLatitude;
+            campground.longitude = newLongitude;
+            campground.location = req.body.campground.location;
         }
     }
     if (req.files.length > 0) {
