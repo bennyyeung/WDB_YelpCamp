@@ -19,8 +19,8 @@ const CampgroundSchema = new Schema({
     price: Number,
     description: String,
     location: String,
-    lat: Number,
-    lng: Number,
+    latitude: Number,
+    longitude: Number,
     author: {
         type: Schema.Types.ObjectId,
         ref: 'User'

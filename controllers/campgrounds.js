@@ -49,12 +49,19 @@ module.exports.showCampground = async (req, res) => {
         req.flash('error', 'Cannot find that campground');
         return res.redirect('/campgrounds');
     }
-    // Get geocode for the campground's location
-    const geocodeRes = await geocoder.geocode(campground.location);
     let lat, lng;
-    if (geocodeRes.length > 0) {
-        lat = geocodeRes[0].latitude;
-        lng = geocodeRes[0].longitude;
+    if (campground.latitude && campground.longitude) {
+        lat = campground.latitude;
+        lng = campground.longitude;
+        console.log("Using Database Geodata")
+    } else {
+        //Backup: Get geocode for the campground's location using a geocoding API
+        const geocodeRes = await geocoder.geocode(campground.location);
+        if (geocodeRes.length > 0) {
+            lat = geocodeRes[0].latitude;
+            lng = geocodeRes[0].longitude;
+            console.log("Using Google API")
+        }
     }
     res.render('campgrounds/show', { campground, lat, lng });   
 }
