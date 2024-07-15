@@ -1,5 +1,10 @@
-/* Google Maps */
+/* Show Page Google Maps */
 #map {
   height: 300px;
+  width: 100%;
+}
+
+#clusterMap {
+  height: 500px;
   width: 100%;
 }
