@@ -33,9 +33,11 @@ async function initMap() {
     const markers = locations.map((position, i) => {
         const label = labels[i % labels.length];
         const pinGlyph = new PinElement({
-            glyph: label,
+            glyph: "",
             glyphColor: "white",
-        });
+            background: "#0490E0",
+            borderColor: "#285092",
+        });        
         const marker = new AdvancedMarkerElement({
             position: position,
             content: pinGlyph.element,
