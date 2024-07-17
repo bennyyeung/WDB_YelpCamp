@@ -14,6 +14,7 @@ const passport = require("passport");
 const LocalStrategy = require("passport-local");
 const User = require("./models/user");
 
+const apiRoutes = require('./routes/api'); // New API routes
 const campgroundRoutes = require("./routes/campgrounds");
 const reviewRoutes = require("./routes/reviews");
 const userRoutes = require("./routes/users");
@@ -62,6 +63,9 @@ app.use((req, res, next) => {
   res.locals.error = req.flash("error");
   next();
 });
+
+// Use the new API routes
+app.use('/api', apiRoutes);
 
 app.use("/campgrounds", campgroundRoutes);
 app.use("/campgrounds/:id/reviews", reviewRoutes);

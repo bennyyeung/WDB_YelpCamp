@@ -1,5 +1,8 @@
 <% layout('layouts/boilerplate') %>
 <link rel="stylesheet" type="text/css" href="/stylesheets/main.css" />
+<script>
+  const campgrounds = <%- JSON.stringify(campgrounds) %>;
+</script>
 <script src="/javascript/clusterMaps.js" defer></script>
 <!-- Include Google Maps API -->
 <script>
