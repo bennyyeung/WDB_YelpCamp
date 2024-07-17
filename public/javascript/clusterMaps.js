@@ -7,6 +7,7 @@ async function initMap() {
     const map = new google.maps.Map(document.getElementById("clusterMap"), {
         zoom: 3,
         center: { lat: 39.925, lng: -83.806 },
+        streetViewControl: false,
         mapId: "DEMO_MAP_ID",
     });
     const infoWindow = new google.maps.InfoWindow({
