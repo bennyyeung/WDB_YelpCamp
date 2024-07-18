@@ -23,10 +23,8 @@ module.exports.renderNewForm = (req, res) => {
 module.exports.createCampground = async (req, res, next) => {
     const { title, location, description, price } = req.body.campground;
     try {
-        // Perform geocoding to get the latitude and longitude
         const geocodeRes = await geocoder.geocode(location);
         if (geocodeRes.length === 0) {
-            // Delete uploaded files if geocoding fails
             if (req.files.length > 0) {
                 for (let file of req.files) {
                     await cloudinary.uploader.destroy(file.filename);
@@ -35,7 +33,6 @@ module.exports.createCampground = async (req, res, next) => {
             req.flash('error', `${req.body.campground.location} is an invalid location! Please enter a valid location`);
             return res.redirect('/campgrounds/new');
         }
-        // If geocoding is successful, create the campground object with lat and lng
         const newCampground = {
             title,
             location,
@@ -46,9 +43,7 @@ module.exports.createCampground = async (req, res, next) => {
             images: req.files.map(f => ({ url: f.path, filename: f.filename })),
             author: req.user._id
         };
-        // Create the campground
         const campground = await Campground.create(newCampground);
-        console.log("Using Google API for new campground!");
         req.flash('success', 'Successfully made a new campground!');
         res.redirect(`/campgrounds/${campground._id}`);
     } catch (err) {
@@ -75,14 +70,11 @@ module.exports.showCampground = async (req, res) => {
     if (campground.latitude && campground.longitude) {
         lat = campground.latitude;
         lng = campground.longitude;
-        console.log("Using Database Geodata")
     } else {
-        //Backup: Get geocode for the campground's location using a geocoding API
         const geocodeRes = await geocoder.geocode(campground.location);
         if (geocodeRes.length > 0) {
             lat = geocodeRes[0].latitude;
             lng = geocodeRes[0].longitude;
-            console.log("Using Google API")
         }
     }
     res.render('campgrounds/show', { campground, lat, lng });   
@@ -105,7 +97,6 @@ module.exports.updateCampground = async (req, res) => {
         req.flash('error', 'Campground not found');
         return res.redirect('/campgrounds');
     }
-    // If location is updated, re-geocode, update lat/lng and update database
     if (req.body.campground.location !== campground.location) {
         const geocodeRes = await geocoder.geocode(req.body.campground.location);
         if (geocodeRes.length === 0) {
@@ -114,7 +105,6 @@ module.exports.updateCampground = async (req, res) => {
         }
         newLatitude = geocodeRes[0].latitude;
         newLongitude = geocodeRes[0].longitude;
-        console.log("Using Google API to update campground map!");
 
         campground.title = req.body.campground.title;
         campground.price = req.body.campground.price;
