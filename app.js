@@ -12,17 +12,19 @@ const ExpressError = require('./utils/ExpressError');
 const methodOverride = require('method-override');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
-const mongoSanitize = require('express-mongo-sanitize');
-const helmet = require('helmet')
 const User = require('./models/user');
+const helmet = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
 
 const apiRoutes = require('./routes/api');
+const userRoutes = require('./routes/users');
 const campgroundRoutes = require('./routes/campgrounds');
 const reviewRoutes = require('./routes/reviews');
-const userRoutes = require('./routes/users');
+
 const MongoStore = require('connect-mongo');
 
-const dbUrl = 'mongodb://localhost:27017/yelp-camp'
+// const dbUrl = 'mongodb://localhost:27017/yelp-camp'
+const dbUrl = process.env.DB_URL || 'mongodb://localhost:27017/yelp-camp';
 mongoose.connect(dbUrl, {});;
 
 const db = mongoose.connection;
@@ -112,6 +114,7 @@ app.use((err, req, res, next) => {
   res.status(statusCode).render('error', { err });
 });
 
-app.listen(3000, () => {
-  console.log('Serving on Port 3000');
-});
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Serving on port ${port}`)
+})
