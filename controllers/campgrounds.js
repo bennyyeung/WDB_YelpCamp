@@ -25,11 +25,6 @@ module.exports.createCampground = async (req, res, next) => {
     try {
         const geocodeRes = await geocoder.geocode(location);
         if (geocodeRes.length === 0) {
-            if (req.files.length > 0) {
-                for (let file of req.files) {
-                    await cloudinary.uploader.destroy(file.filename);
-                }
-            }
             req.flash('error', `${req.body.campground.location} is an invalid location! Please enter a valid location`);
             return res.redirect('/campgrounds/new');
         }
@@ -44,6 +39,9 @@ module.exports.createCampground = async (req, res, next) => {
             author: req.user._id
         };
         const campground = await Campground.create(newCampground);
+        await campground.save();
+
+        console.log("Using Google API for new campground!");
         req.flash('success', 'Successfully made a new campground!');
         res.redirect(`/campgrounds/${campground._id}`);
     } catch (err) {
@@ -91,43 +89,46 @@ module.exports.renderEditForm = async (req, res) => {
 }
 
 module.exports.updateCampground = async (req, res) => {
-    const { id } = req.params    
+    const { id } = req.params
     const campground = await Campground.findById(id);
     if (!campground) {
         req.flash('error', 'Campground not found');
         return res.redirect('/campgrounds');
     }
-    if (req.body.campground.location !== campground.location) {
-        const geocodeRes = await geocoder.geocode(req.body.campground.location);
-        if (geocodeRes.length === 0) {
-            req.flash('error', `${req.body.campground.location} is an invalid location! Please enter a valid location`);
-            return res.redirect(`/campgrounds/${id}/edit`);
-        }
-        newLatitude = geocodeRes[0].latitude;
-        newLongitude = geocodeRes[0].longitude;
-
+    try {
         campground.title = req.body.campground.title;
         campground.price = req.body.campground.price;
         campground.description = req.body.campground.description;
-        if (newLatitude && newLongitude) {
-            campground.latitude = newLatitude;
-            campground.longitude = newLongitude;
+
+        if (req.body.campground.location !== campground.location) {
+            const geocodeRes = await geocoder.geocode(req.body.campground.location);
+            if (geocodeRes.length === 0) {
+                req.flash('error', `${req.body.campground.location} is an invalid location! Please enter a valid location`);
+                return res.redirect(`/campgrounds/${id}/edit`);
+            }
+            campground.latitude = geocodeRes[0].latitude;
+            campground.longitude = geocodeRes[0].longitude;
             campground.location = req.body.campground.location;
+            console.log("Using Google API to update campground map!");
         }
-    }
-    if (req.files.length > 0) {
-        const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }))
-        campground.images.push(...imgs);
-    }
-    await campground.save();
-    if (req.body.deleteImages) {
-        for (let filename of req.body.deleteImages) {
-            await cloudinary.uploader.destroy(filename);
+        if (req.files.length > 0) {
+            const imgs = req.files.map(f => ({ url: f.path, filename: f.filename }))
+            campground.images.push(...imgs);
         }
-        await campground.updateOne({ $pull: { images: { filename: { $in: req.body.deleteImages } } } })
+        if (req.body.deleteImages) {
+            for (let filename of req.body.deleteImages) {
+                await cloudinary.uploader.destroy(filename);
+            }
+            await campground.updateOne({ $pull: { images: { filename: { $in: req.body.deleteImages } } } })
+        }
+        await campground.save();
+        req.flash('success', 'Successfully updated campground!')
+        res.redirect(`/campgrounds/${campground._id}`)
+    } catch (err) {
+        console.error('Error updating campground:', err);
+        req.flash('error', 'Failed to update campground');
+        res.redirect('/campgrounds');
     }
-    req.flash('success', 'Successfully updated campground!')
-    res.redirect(`/campgrounds/${campground._id}`)
 }
 
 module.exports.deleteCampground = async (req, res) => {
